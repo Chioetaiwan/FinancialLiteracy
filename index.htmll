@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>金融リテラシー診断</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            box-sizing: border-box;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-3deg); }
+            75% { transform: rotate(3deg); }
+        }
+        
+        .bounce { animation: bounce 2s infinite; }
+        .pulse { animation: pulse 2s infinite; }
+        .wiggle { animation: wiggle 0.5s ease-in-out; }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #e0f2fe 0%, #f3e5f5 50%, #fff3e0 100%);
+        }
+        
+        .cute-shadow {
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        .answer-button {
+            transition: all 0.3s ease;
+        }
+        
+        .answer-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+    <div class="max-w-4xl mx-auto p-6">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">金融リテラシー診断</h1>
+            <p class="text-gray-600 text-lg">あなたのお金に対する考え方を診断します</p>
+        </div>
+
+        <div id="quiz-container" class="bg-white rounded-3xl p-8 cute-shadow">
+            <!-- Progress Bar -->
+            <div class="mb-8">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-medium text-gray-600">進捗</span>
+                    <span class="text-sm font-medium text-gray-600" id="progress-text">0/26</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3">
+                    <div id="progress-bar" class="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Questions -->
+            <div id="questions-container"></div>
+
+            <!-- Submit Button -->
+            <div class="text-center mt-8">
+                <button id="submit-btn" onclick="calculateResult()" 
+                        class="px-8 py-3 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg font-medium text-lg hover:from-green-600 hover:to-teal-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                        disabled>
+                    診断結果を見る
+                </button>
+            </div>
+        </div>
+
+        <!-- Result Container -->
+        <div id="result-container" class="bg-white rounded-lg p-8 shadow-lg hidden">
+            <div class="text-center">
+                <div id="result-emoji" class="text-6xl mb-4"></div>
+                <h2 id="result-title" class="text-2xl font-bold mb-4 text-gray-800"></h2>
+                <div id="result-caption" class="text-lg bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent font-bold mb-6"></div>
+                <div id="result-description" class="text-gray-600 text-base leading-relaxed mb-8 max-w-2xl mx-auto"></div>
+                
+                <button onclick="resetQuiz()" 
+                        class="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg font-medium hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-lg">
+                    もう一度診断する
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            "外食より自宅で料理して費用を抑えることを好む",
+            "旅行や趣味にお金を使う方が、節約するより楽しいと思う",
+            "安い代替品（中古）などを探して購入することが多い",
+            "『将来より今』を優先してお金を使うことが多い",
+            "収入が入ったらすぐに使いたくなる",
+            "節約してコツコツ貯めるのが得意だ",
+            "ギャンブルのようなお金の使い方は避けたい",
+            "リスクを取らなければ増えないと思う",
+            "株や投資信託に挑戦してみたいと思う",
+            "周囲で『良さそうだ』と聞く投資話があっても冷静に比較したい",
+            "投資は怖いものだと思う",
+            "短期間で大きくお金を増やしたいと思う",
+            "借金は絶対にしたくない",
+            "お金は使ってこそ価値がある",
+            "面倒だと感じて知らずに決めてしまうことがある",
+            "直感でこれ良さそうと思ったら値段を見ずに買ってしまうことが多い",
+            "家計簿をつけている",
+            "レシートを捨てずに管理している",
+            "収入が入ると、まず用途ごとに仕分けて管理する",
+            "自分のためにお金を使うことが多い",
+            "プレゼントよりも自分の欲しいものを優先する",
+            "家族や友人のためにお金を使うことに喜びを感じている",
+            "誰かをサポートするために貯金する",
+            "お金のことを家族や友人とよく話す",
+            "家族やパートナーとお金を共有・共同使用することに抵抗を感じない",
+            "募金など社会的活動に魅力を感じる"
+        ];
+
+        const typeCaptions = {
+            EAPM: "ウサギ🐰 開拓士",
+            EAPO: "サル🐵 先駆者", 
+            EAIM: "キツネ🦊 芸術家",
+            EAIO: "リス🐿 共鳴者",
+            ESPM: "カメ🐢 設計士",
+            ESPO: "ハト🕊 温厚家",
+            ESIO: "ヒツジ🐑 調和士",
+            ESIM: "フクロウ🦉 賢行者",
+            CAPM: "ライオン🦁 挑戦家",
+            CAPO: "ゾウ🐘 勇援者",
+            CAIM: "トラ🐯 遊動士",
+            CAIO: "ウマ🐴 熱友者",
+            CSPM: "シロクマ🐻‍❄️ 裕楽家",
+            CSPO: "イヌ🐶 御曹司",
+            CSIM: "コアラ🐨 感覚者",
+            CSIO: "ペンギン🐧 恵愛者"
+        };
+
+        const typeDescriptions = {
+            EAPM: "あなたは新しいことに挑戦するのが大好きな冒険家タイプ！お金の使い方も計画的で、将来への投資を大切にします。",
+            EAPO: "好奇心旺盛で行動力抜群！新しい投資や金融商品にも積極的にチャレンジする先駆者です。",
+            EAIM: "美的センスに優れ、価値のあるものにお金をかける芸術家タイプ。質の高いものを見極める目を持っています。",
+            EAIO: "人とのつながりを大切にし、みんなで豊かになることを願う共感力の高いタイプです。",
+            ESPM: "コツコツと着実に資産を築く堅実派。長期的な視点でお金を管理する設計士タイプです。",
+            ESPO: "穏やかで思いやりがあり、家族や友人のことを第一に考える温厚なタイプです。",
+            ESIO: "バランス感覚に優れ、みんなが幸せになるお金の使い方を心がける調和を重視するタイプです。",
+            ESIM: "知識豊富で慎重派。しっかりと情報収集してから行動する賢明なタイプです。",
+            CAPM: "リーダーシップがあり、大胆な投資判断ができる挑戦家タイプ！リスクを恐れません。",
+            CAPO: "仲間思いで頼りになる存在。みんなを支援することに喜びを感じる勇敢なサポーターです。",
+            CAIM: "自由奔放で楽しいことが大好き！お金も楽しく使う遊び心満載のタイプです。",
+            CAIO: "エネルギッシュで友達思い。みんなと一緒に楽しい時間を過ごすことを大切にします。",
+            CSPM: "余裕があり、ゆったりとした生活を好む裕福なタイプ。お金に対してもおおらかです。",
+            CSPO: "恵まれた環境で育ち、お金の心配をあまりしない御曹司タイプ。寛大な心の持ち主です。",
+            CSIM: "感性豊かで直感を大切にするタイプ。お金の使い方も感覚的で自然体です。",
+            CSIO: "愛情深く、人のために尽くすことに幸せを感じる恵み深いタイプです。"
+        };
+
+        let answers = Array(questions.length).fill(null);
+
+        function initializeQuiz() {
+            const container = document.getElementById('questions-container');
+            container.innerHTML = '';
+
+            questions.forEach((question, index) => {
+                const questionDiv = document.createElement('div');
+                const bgColors = ['bg-blue-50 border-blue-200', 'bg-green-50 border-green-200', 'bg-purple-50 border-purple-200', 'bg-pink-50 border-pink-200', 'bg-yellow-50 border-yellow-200', 'bg-indigo-50 border-indigo-200'];
+                const colorClass = bgColors[index % bgColors.length];
+                questionDiv.className = `mb-6 p-6 ${colorClass} rounded-lg border`;
+                
+                questionDiv.innerHTML = `
+                    <div class="mb-4">
+                        <p class="font-medium text-gray-800 text-base leading-relaxed">${index + 1}. ${question}</p>
+                    </div>
+                    <div class="flex justify-between text-sm mb-3 px-2">
+                        <span class="text-gray-600 font-medium">とてもはい</span>
+                        <span class="text-gray-600 font-medium">とてもいいえ</span>
+                    </div>
+                    <div class="flex gap-2 justify-between">
+                        ${[1,2,3,4,5,6].map(val => `
+                            <button onclick="handleAnswer(${index}, ${val})" 
+                                    class="answer-button w-12 h-12 rounded-lg border-3 flex items-center justify-center font-bold text-lg transition-all duration-300 shadow-sm ${answers[index] === val ? 'bg-gradient-to-br from-purple-500 to-pink-500 text-white border-purple-500 shadow-lg transform scale-105' : 'bg-white text-gray-700 border-gray-300 hover:border-purple-400 hover:bg-purple-50 hover:shadow-md'}"
+                                    id="btn-${index}-${val}">
+                                ${val}
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+                
+                container.appendChild(questionDiv);
+            });
+        }
+
+        function handleAnswer(questionIndex, value) {
+            answers[questionIndex] = value;
+            
+            // Update button styles for this question
+            for (let i = 1; i <= 6; i++) {
+                const btn = document.getElementById(`btn-${questionIndex}-${i}`);
+                if (i === value) {
+                    // Selected button
+                    btn.className = 'answer-button w-12 h-12 rounded-lg border-3 flex items-center justify-center font-bold text-lg transition-all duration-300 shadow-sm bg-gradient-to-br from-purple-500 to-pink-500 text-white border-purple-500 shadow-lg transform scale-105';
+                } else {
+                    // Unselected buttons
+                    btn.className = 'answer-button w-12 h-12 rounded-lg border-3 flex items-center justify-center font-bold text-lg transition-all duration-300 shadow-sm bg-white text-gray-700 border-gray-300 hover:border-purple-400 hover:bg-purple-50 hover:shadow-md';
+                }
+            }
+            
+            updateProgress();
+            updateSubmitButton();
+        }
+
+        function updateProgress() {
+            const answered = answers.filter(a => a !== null).length;
+            const percentage = (answered / questions.length) * 100;
+            
+            document.getElementById('progress-bar').style.width = percentage + '%';
+            document.getElementById('progress-text').textContent = `${answered}/${questions.length}`;
+        }
+
+        function updateSubmitButton() {
+            const allAnswered = answers.every(a => a !== null);
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = !allAnswered;
+        }
+
+        function calculateResult() {
+            // Simplified calculation - in real implementation, this would be more complex
+            let type = "EAPM";
+            const highScores = answers.filter(a => a >= 4).length;
+            
+            if (highScores > 13) type = "CSIO";
+            else if (highScores > 10) type = "CAPM";
+            else if (highScores > 7) type = "ESPM";
+            else type = "EAIM";
+            
+            showResult(type);
+        }
+
+        function showResult(type) {
+            document.getElementById('quiz-container').classList.add('hidden');
+            document.getElementById('result-container').classList.remove('hidden');
+            
+            const emoji = typeCaptions[type].split(' ')[0];
+            const caption = typeCaptions[type];
+            const description = typeDescriptions[type];
+            
+            document.getElementById('result-emoji').textContent = emoji;
+            document.getElementById('result-title').textContent = `あなたのタイプは: ${type}`;
+            document.getElementById('result-caption').textContent = caption;
+            document.getElementById('result-description').textContent = description;
+            
+            // Scroll to result
+            document.getElementById('result-container').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function resetQuiz() {
+            answers = Array(questions.length).fill(null);
+            document.getElementById('result-container').classList.add('hidden');
+            document.getElementById('quiz-container').classList.remove('hidden');
+            
+            initializeQuiz();
+            updateProgress();
+            updateSubmitButton();
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Initialize the quiz when page loads
+        initializeQuiz();
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9859ccd73261f201',t:'MTc1ODk2MzUxNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
